@@ -22,6 +22,8 @@
 跑目录，找到一个**config.php**，但没有内容
 抓包查看，其中login页面有回显，估计是数据库查询内容回显，其他页面正常
 ![444.png](http://ww4.sinaimg.cn/large/006iKNp3gy1fpq983ffhtj30b508eweo.jpg)
+
+
 思索.....
 
 + php中判断是数字可能用到`is_numeric()`，is_numeric判断数字不严格，可以是16进制。
