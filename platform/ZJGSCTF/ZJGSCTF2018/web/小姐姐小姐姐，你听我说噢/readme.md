@@ -1,7 +1,7 @@
 # 考点 
 0. 难度:难
 1. csrf
-    <img src=csrf_poc>
+    `<img src=csrf_poc>`
 2. $_SERVER['SCRIPT_NAME']漏洞
 3. 远程包含漏洞
 
